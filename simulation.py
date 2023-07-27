@@ -1,16 +1,17 @@
 import numpy as np
+import scipy.spatial.distance as distance
 import math
 
-groesse_zeitschritt = 0.001
+groesse_zeitschritt = 0.0005
 
-anzahl_zeitschritte = 10000
-anzahl_teilchen = 10
+anzahl_zeitschritte = 100000
+anzahl_teilchen = 50
 anzahl_dimensionen = 2
-
 m_1 = 1
 m_2 = 1
 
 radius_teilchen = 0.005
+
 
 def abstand(teilchen1, teilchen2):
     
@@ -60,27 +61,29 @@ def zeitschritt(x, v, dt):
         for d in range(anzahl_dimensionen):
             if x[t, d] > 1 or x[t, d] < 0:
                 v_neu[t,d] *= -1
+                
+    distanzen = distance.pdist(x)
+    q = distance.squareform(distanzen)
 
-    for teilchen1 in range(anzahl_teilchen):
-        for teilchen2 in range(anzahl_teilchen):
-            if teilchen1 <= teilchen2:
-                continue
-            if abstand(teilchen1, teilchen2) < 2 * radius_teilchen:
-                v_neu[teilchen1, :], v_neu[teilchen2, :] = stoß(x, v, teilchen1, teilchen2)
-    
+    t1, t2 = np.where(q < 2*radius_teilchen)
+
+    for tt1, tt2 in zip(t1, t2):
+        if tt1 < tt2:
+            v_neu[tt1, :], v_neu[tt2, :] = stoß(x, v, tt1, tt2)
+            
     x_neu = x + v_neu * dt
 
     return x_neu, v_neu
 
 anfangspositionen = np.random.random((anzahl_teilchen, anzahl_dimensionen))
+
 for position1 in range(len(anfangspositionen)):
     for position2 in range(len(anfangspositionen)):
         if position1 == position2:
             continue
-        if np.linalg.norm(anfangspositionen[position1] - anfangspositionen[position2]) < 2*radius_teilchen:
-            anfangspositionen[position1] = np.random.random(anzahl_dimensionen)
-            position1 -= 1
-
+        while np.linalg.norm(anfangspositionen[position1] - anfangspositionen[position2]) < 2*radius_teilchen:
+            anfangspositionen[position1] = 0.9*np.random.random(anzahl_dimensionen)
+        print(np.linalg.norm(anfangspositionen[position1] - anfangspositionen[position2]))
 
 anfangsgeschwindigkeiten = 2*np.random.random((anzahl_teilchen, anzahl_dimensionen))-1
 orte = 1.8*np.zeros([anzahl_zeitschritte, anzahl_teilchen, anzahl_dimensionen])-0.9
@@ -93,9 +96,12 @@ geschwindigkeiten[0] = anfangsgeschwindigkeiten
 zeiten = np.array([schritt * groesse_zeitschritt for schritt in range(anzahl_zeitschritte)])
 for schritt in range(1, anzahl_zeitschritte):
     orte[schritt], geschwindigkeiten[schritt] = zeitschritt(orte[schritt-1], geschwindigkeiten[schritt-1], groesse_zeitschritt)
-    print(f"{schritt+1}/{anzahl_zeitschritte}\t:\t{round(schritt/anzahl_zeitschritte/10,3)*1000}%")
+    if (schritt+1)%100 == 0:
+        print(f"{schritt+1}/{anzahl_zeitschritte}\t:\t{round(schritt/anzahl_zeitschritte/10,3)*1000}%")
 
 header = "Teilchenpositionen"
 for teilchen in range(anzahl_teilchen):
     np.savetxt("Ort_Teilchen" + str(teilchen + 1) + ".txt", np.column_stack([zeiten, orte[:, teilchen, :]]), header=header)
     np.savetxt("Geschwindigkeit_Teilchen" + str(teilchen + 1) + ".txt", np.column_stack([geschwindigkeiten[:, teilchen, :]]), header=header)
+
+print("\nFertig")
