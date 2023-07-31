@@ -1,16 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-anzahl_schritte = 10000
-anzahl_teilchen = 1000
-
 anzahl_teilchen, anzahl_schritte = [int(i) for i in np.loadtxt("Konfiguration.txt")]
-#anzahl_teilchen = int(np.loadtxt("Konfiguration.txt")[0])
 
 v_max = 5
 
 orte_Teilchen = []
 geschwindigkeiten_Teilchen = []
+e_pot = []
 
 def ort_Anzeige():
     plt.figure()
@@ -39,13 +36,18 @@ def energie_Anzeige():
         E_ges *= 0.5
         E_t.append(E_ges)
 
-    plt.plot([schritt for schritt in range(anzahl_schritte)], E_t)
+    plt.plot([schritt for schritt in range(anzahl_schritte)], E_t, label = "kinetische Energie")
+    plt.plot([schritt for schritt in range(anzahl_schritte)], e_pot, label = "potentielle Energie")
     
+    plt.plot([schritt for schritt in range(anzahl_schritte)], np.array(E_t) + np.array(e_pot), label = "Gesamtenergie")
+        
     plt.xlabel('Schritt')
     plt.ylabel('Energie E')
-    plt.title('Gesamtenergie')
+    plt.title('Energie')
+    
+    plt.legend()
+    
     plt.show()
-
 
 def geschwindigkeit_Anzeige(schritt):
 
@@ -59,13 +61,9 @@ def geschwindigkeit_Anzeige(schritt):
             if np.linalg.norm(geschwindigkeiten_Teilchen[teilchen][schritt]) > v_max*(intervall/20-1/20) and np.linalg.norm(geschwindigkeiten_Teilchen[teilchen][schritt]) < v_max*intervall/20:
                 geschwindigkeit_Intervalle[intervall] += 1
                 
-    
-    #print(geschwindigkeit_Intervalle)
-    
+        
     plt.plot([round(i/10+1/10*v_max,1) for i in range(10)], [geschwindigkeit_Intervalle[i] for i in range(10)])
-    
-    #print(geschwindigkeit_Intervalle)
-    
+        
     plt.xlabel('Geschwindigkeit v')
     plt.ylabel('Häufigkeit n')
     plt.title('Geschwindigkeitsverteilung')
@@ -77,8 +75,10 @@ for teilchen in range(anzahl_teilchen):
     orte_Teilchen.append(np.loadtxt(f"Ort_Teilchen{teilchen+1}.txt"))
     geschwindigkeiten_Teilchen.append(np.loadtxt(f"Geschwindigkeit_Teilchen{teilchen+1}.txt"))
 
-#print(geschwindigkeiten_Teilchen)
+e_pot = [e for e in np.loadtxt("E_pot.txt")]
 
+anzahl_schritte = len(orte_Teilchen[0])
+anzahl_teilchen = len(orte_Teilchen)
 
 geschwindigkeit_Anzeige(100)
 
